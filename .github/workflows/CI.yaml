@@ -1,0 +1,41 @@
+name: Rsbuild Deployment
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+concurrency:
+  group: 'deploy'
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm rsbuild build
+
+      - name: Setup Ossutil
+        uses: manyuanrong/setup-ossutil@v3.0
+        with:
+          endpoint: "oss-cn-beijing.aliyuncs.com"
+          access-key-id: ${{ secrets.KEY }}
+          access-key-secret: ${{ secrets.SECRET }}
+
+      - run: ossutil cp -rf dist oss://cone/
+
